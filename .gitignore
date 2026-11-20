@@ -1,0 +1,4 @@
+*.tgz
+*.log
+test-out.txt
+test-err.txt
