@@ -105,6 +105,13 @@
           (test-eq "and sets the cell to true" #t (car cell))
           (test-eq "on a set cell it returns true" #t (test-and-set! cell))
           (test-eq "and leaves the cell true" #t (car cell)))
+        (test-error "on a non-pair it raises" (test-and-set! 'not-a-pair))
+        ;; A literal is immutable in some implementations (Chibi among
+        ;; them), so this may raise from set-car! with the lock held.
+        (guard (e (#t #f)) (test-and-set! '(#f)))
+        (let ((cell (list false)))
+          (test-eq "after a raising call it still works on a good cell"
+                   #f (test-and-set! cell)))
         ;; SICP 3.4.2 make-mutex, built only from the exported primitives.
         (let ()
           (define (make-mutex)

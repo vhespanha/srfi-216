@@ -52,12 +52,18 @@
 (define test-and-set-mutex (make-mutex 'test-and-set!))
 
 ;; If (car cell) is false, set it to #t.  Either way return its old value.
+;; The mutex is released on every exit, so a call that raises (say, on
+;; an immutable pair) cannot leave every later call deadlocked.
 (define (test-and-set! cell)
-  (mutex-lock! test-and-set-mutex)
-  (let ((old (car cell)))
-    (if (not old) (set-car! cell #t))
-    (mutex-unlock! test-and-set-mutex)
-    old))
+  (if (not (pair? cell))
+      (error "test-and-set!: argument must be a pair" cell))
+  (dynamic-wind
+   (lambda () (mutex-lock! test-and-set-mutex))
+   (lambda ()
+     (let ((old (car cell)))
+       (if (not old) (set-car! cell #t))
+       old))
+   (lambda () (mutex-unlock! test-and-set-mutex))))
 
 (define (random x)
   (cond ((not (and (real? x) (positive? x)))
