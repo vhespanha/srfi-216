@@ -99,6 +99,19 @@
                             (not (eq? (car threads) (cadr threads)))
                             (not (memq (current-thread) threads))))))
 
+      (test-group "parallel-execute errors"
+        (let* ((finished #f)
+               (raised
+                (guard (e (#t e))
+                  (parallel-execute
+                   (lambda () (raise 'boom))
+                   (lambda () (thread-sleep! 0.1) (set! finished #t)))
+                  #f)))
+          (test-eq "an error in one thunk propagates to the caller"
+                   'boom raised)
+          (test-assert "slower thunks finish before the error propagates"
+                       finished)))
+
       (test-group "test-and-set!"
         (let ((cell (list false)))
           (test-eq "on a fresh cell it returns false" #f (test-and-set! cell))

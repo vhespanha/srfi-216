@@ -41,11 +41,27 @@
 ;;; Concurrency
 ;; Teaching-grade primitives on top of SRFI 18.
 
-;; Run each thunk in its own thread and wait for all of them.
+;; Run each thunk in its own thread and wait for all of them.  Every
+;; thread is joined even if some raise; then the first error, in thunk
+;; order, is re-raised in the caller.  Each thread catches its own
+;; error so the caller sees the original condition object.  An error
+;; is boxed in a one-element list, so the value #f means none.
 (define (parallel-execute . thunks)
-  (let ((threads (map (lambda (thunk) (thread-start! (make-thread thunk)))
-                      thunks)))
-    (for-each thread-join! threads)))
+  (define (capture thunk)
+    (guard (e (#t (list e))) (thunk) #f))
+  (let* ((threads
+          (map (lambda (thunk)
+                 (thread-start! (make-thread (lambda () (capture thunk)))))
+               thunks))
+         (errors
+          ;; A thread's result is its own captured error, or #f; a
+          ;; join that itself raises (say, a terminated thread) counts too.
+          (map (lambda (t) (guard (e (#t (list e))) (thread-join! t)))
+               threads)))
+    (let loop ((errors errors))
+      (cond ((null? errors))
+            ((car errors) => (lambda (boxed) (raise (car boxed))))
+            (else (loop (cdr errors)))))))
 
 ;; One library-wide mutex makes every test-and-set! atomic with respect
 ;; to every other.
