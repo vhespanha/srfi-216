@@ -4,5 +4,6 @@
   (export true false nil the-empty-stream
           runtime random parallel-execute test-and-set!
           stream-null? cons-stream)
-  (import (scheme base) (scheme lazy) (scheme time) (srfi 18) (srfi 27))
+  (import (scheme base) (scheme inexact) (scheme lazy) (scheme time)
+          (srfi 18) (srfi 27))
   (include "216.scm"))

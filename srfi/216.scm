@@ -81,8 +81,12 @@
        old))
    (lambda () (mutex-unlock! test-and-set-mutex))))
 
+;; A non-integer x must also be finite once made inexact: +inf.0, or an
+;; exact rational too large for a flonum, would yield +inf.0 or +nan.0.
 (define (random x)
-  (cond ((not (and (real? x) (positive? x)))
+  (cond ((not (and (real? x)
+                   (positive? x)
+                   (or (exact-integer? x) (finite? (inexact x)))))
          (error "random: argument must be a positive real number" x))
         ((exact-integer? x) (random-integer x))
         (else (* (inexact x) (random-real)))))

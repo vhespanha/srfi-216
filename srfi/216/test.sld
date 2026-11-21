@@ -67,7 +67,13 @@
                                                      (<= 0 r) (< r 1/2)))))
         (test-error "random of zero is rejected" (random 0))
         (test-error "random of a negative integer is rejected" (random -5))
-        (test-error "random of a negative real is rejected" (random -0.5)))
+        (test-error "random of a negative real is rejected" (random -0.5))
+        (test-error "random of +inf.0 is rejected" (random +inf.0))
+        (test-error "random of +nan.0 is rejected" (random +nan.0))
+        (test-error "random of an exact rational too big for a flonum is rejected"
+                    (random (/ (expt 10 400) 3)))
+        (test-assert "a huge exact integer still gives an exact integer"
+                     (exact-integer? (random (expt 10 400)))))
 
       (test-group "parallel-execute"
         ;; SICP 3.4.1: the only possible final values of x.
