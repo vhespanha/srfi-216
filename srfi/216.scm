@@ -20,9 +20,21 @@
 ;;; Time
 ;; Microseconds since the Epoch, as an exact integer.  Built on
 ;; current-second rather than jiffies, which have no fixed epoch.
+;; current-second follows the wall clock, which can step backwards, so
+;; runtime returns the larger of the new reading and the last value it
+;; returned.  A mutex keeps that last value consistent across threads.
+
+(define runtime-mutex (make-mutex 'runtime))
+(define last-runtime 0)
 
 (define (runtime)
-  (exact (floor (* (current-second) 1000000))))
+  (let ((now (exact (floor (* (current-second) 1000000)))))
+    (dynamic-wind
+     (lambda () (mutex-lock! runtime-mutex))
+     (lambda ()
+       (if (> now last-runtime) (set! last-runtime now))
+       last-runtime)
+     (lambda () (mutex-unlock! runtime-mutex)))))
 
 ;;; Randomness
 ;; An exact positive integer n gives an exact integer in [0, n).  Any
