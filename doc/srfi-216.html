@@ -13,8 +13,8 @@ written by Vladimir Nikishkin. It provides the primitives that
 <i>Structure and Interpretation of Computer Programs</i> assumes, so the
 book's code runs unchanged after <code>(import (srfi 216))</code>.</p>
 
-<p>Dependencies: <code>(scheme base)</code>, <code>(scheme lazy)</code>,
-<code>(scheme time)</code>, <code>(srfi 18)</code> and <code>(srfi 27)</code>.
+<p>Dependencies: <code>(scheme base)</code>, <code>(scheme inexact)</code>,
+<code>(scheme lazy)</code>, <code>(scheme time)</code>, <code>(srfi 18)</code> and <code>(srfi 27)</code>.
 Intended for teaching, not for production concurrency or randomness.</p>
 
 <h2>Exports</h2>
@@ -41,13 +41,24 @@ It can never be the result of <code>cons-stream</code>.</dd>
 </dl>
 <p><code>stream-car</code>, <code>stream-cdr</code> and other stream helpers
 are deliberately <em>not</em> exported, so defining them yourself, as the book
-asks, does not clash with the import.</p>
+asks, does not clash with the import. Nor is <code>force</code>: the SRFI fixes
+the export list, so import <code>(scheme lazy)</code> yourself to write
+<code>stream-cdr</code>:</p>
+<pre>(import (scheme base) (scheme lazy) (srfi 216))
+
+(define (stream-car s) (car s))
+(define (stream-cdr s) (force (cdr s)))</pre>
 
 <h3>Time and randomness</h3>
 <dl>
 <dt><code>(runtime)</code></dt>
 <dd>The number of microseconds since the Epoch, as an exact integer, computed
-from <code>current-second</code>. Subtract two readings to time a computation.
+from <code>current-second</code>. As SRFI 216 specifies ("since the Epoch,
+Midnight on January 1, 1970 TAI"), the value is on the TAI timescale, so on
+implementations whose <code>current-second</code> is TAI (Chibi among them) it
+runs about 37 seconds ahead of POSIX time. It is meant only for differences:
+subtract two readings to time a computation. It never decreases, even if the
+system clock is stepped back.
 (The SRFI's own example prints a non-integer; this library follows the SRFI's
 text, which says an integer.)</dd>
 <dt><code>(random <var>x</var>)</code></dt>
@@ -58,7 +69,10 @@ text, which says an integer.)</dd>
 <li>Any other positive real <var>x</var> (inexact, or an exact non-integer
 such as <code>1/2</code>) gives an inexact real in [0, <var>x</var>),
 computed as <var>x</var> times <code>random-real</code>.</li>
-<li>Zero, a negative number, or a non-real signals an error.</li>
+<li>Zero, a negative number, a non-real, a NaN, or a non-integer whose
+inexact value is not finite (<code>+inf.0</code>, or an exact rational too
+large for a flonum) signals an error. An exact integer of any size is
+accepted.</li>
 </ul>
 The SRFI 27 default random source is randomized when the library loads, then
 mixed with the microsecond part of the current time, so each session sees a
@@ -70,13 +84,17 @@ ticks once a second.</dd>
 <dl>
 <dt><code>(parallel-execute <var>thunk</var> ...)</code></dt>
 <dd>Starts one SRFI 18 thread per thunk, waits for all of them to finish,
-and returns an unspecified value.</dd>
+and returns an unspecified value. If any thunk raises, the others still run to
+completion; once every thread has finished, the first error, in argument
+order, is raised again in the caller.</dd>
 <dt><code>(test-and-set! <var>cell</var>)</code></dt>
 <dd><var>cell</var> is a pair, as in the book's <code>(list false)</code>. If
 its <code>car</code> is false it is set to <code>#t</code>; either way the old
 value is returned. A single library-wide SRFI 18 mutex makes each call atomic
 with respect to every other call, so the book's <code>make-mutex</code> and
-serializers really exclude each other.</dd>
+serializers really exclude each other. A non-pair signals an error, and the
+mutex is released even when a call raises (for example on an immutable
+literal), so later calls never deadlock.</dd>
 </dl>
 
 <h2>Credits</h2>

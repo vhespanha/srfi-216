@@ -18,7 +18,7 @@ host Scheme.
 ## Usage
 
 ```scheme
-(import (scheme base) (srfi 216))
+(import (scheme base) (scheme lazy) (srfi 216))
 
 (define (stream-car s) (car s))
 (define (stream-cdr s) (force (cdr s)))
@@ -28,6 +28,9 @@ host Scheme.
 (random 10)                                   ; => exact integer in [0, 10)
 (runtime)                                     ; => microseconds since the Epoch
 ```
+
+`(srfi 216)` does not export `force`, since the SRFI fixes the exports. Import
+`(scheme lazy)` yourself to define `stream-cdr` as the book does.
 
 Exports: `true`, `false`, `nil`, `the-empty-stream`, `runtime`, `random`,
 `parallel-execute`, `test-and-set!`, `stream-null?`, `cons-stream`.
