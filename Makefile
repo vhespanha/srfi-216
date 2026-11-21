@@ -3,7 +3,7 @@ SNOW ?= snow-chibi
 
 VERSION = 1.0.0
 TARBALL = srfi-216-$(VERSION).tgz
-AUTHOR := $(shell git config user.name)
+AUTHOR = Vinicius Hespanha Souza
 DESCRIPTION = SRFI 216: SICP Prerequisites (Portable)
 
 LIB = srfi/216.sld
