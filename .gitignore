@@ -2,3 +2,4 @@
 *.log
 test-out.txt
 test-err.txt
+.build-home/
