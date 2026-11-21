@@ -96,14 +96,17 @@
                             (worker 3) (worker 4))
           (test-equal "returns only after every thunk has finished"
                       (make-vector 5 #t) done))
-        (let ((threads '()))
+        ;; Each thunk writes only its own slot, so there is no race.
+        (let ((threads (make-vector 2 #f)))
           (parallel-execute
-           (lambda () (set! threads (cons (current-thread) threads)))
-           (lambda () (set! threads (cons (current-thread) threads))))
-          (test-assert "each thunk runs in its own thread"
-                       (and (= 2 (length threads))
-                            (not (eq? (car threads) (cadr threads)))
-                            (not (memq (current-thread) threads))))))
+           (lambda () (vector-set! threads 0 (current-thread)))
+           (lambda () (vector-set! threads 1 (current-thread))))
+          (let ((t0 (vector-ref threads 0)) (t1 (vector-ref threads 1)))
+            (test-assert "each thunk runs in its own thread"
+                         (and (thread? t0) (thread? t1)
+                              (not (eq? t0 t1))
+                              (not (eq? t0 (current-thread)))
+                              (not (eq? t1 (current-thread))))))))
 
       (test-group "parallel-execute errors"
         (let* ((finished #f)
