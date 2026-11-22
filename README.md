@@ -2,14 +2,29 @@
 
 A portable R7RS implementation of
 [SRFI 216: SICP Prerequisites (Portable)](https://srfi.schemers.org/srfi-216/srfi-216.html),
-packaged for [snow-fort](https://snow-fort.org/). It gives you the primitives
+packaged for `snow-chibi`. It gives you the primitives
 *Structure and Interpretation of Computer Programs* assumes, so book code runs
 unchanged.
 
 ## Install
 
+With `snow-chibi` 0.12 or later and `git` on your path:
+
 ```sh
-snow-chibi install '(srfi 216)'
+snow-chibi --repo=https://raw.githubusercontent.com/vhespanha/srfi-216/main/.snow-repo.scm \
+  install '(srfi 216)'
+```
+
+`--repo` points `snow-chibi` at this repository's package index, and the
+package is cloned from the tagged release it names. Install-time tests are
+not run this way; clone the repo and run `make test` for those.
+
+Without `git`, download `srfi-216-1.0.0.tgz` from the
+[v1.0.0 release](https://github.com/vhespanha/srfi-216/releases/tag/v1.0.0)
+and install the file directly, which also runs the test suite:
+
+```sh
+snow-chibi install srfi-216-1.0.0.tgz
 ```
 
 The library needs `(srfi 18)` threads and `(srfi 27)` random numbers from the
@@ -42,8 +57,8 @@ SRFI leaves room for choice.
 ```sh
 make test      # run the SRFI 64 suite on chibi-scheme
 make package   # run the tests, then build srfi-216-1.0.0.tgz
+make index     # on the v1.0.0 tag: add the release to .snow-repo.scm
 make clean     # remove build artefacts
-make publish   # upload the tarball to snow-fort (maintainer only)
 ```
 
 SRFI 216 was written by Vladimir Nikishkin. This implementation is MIT licensed;

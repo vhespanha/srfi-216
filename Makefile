@@ -2,6 +2,7 @@ CHIBI ?= chibi-scheme
 SNOW ?= snow-chibi
 
 VERSION = 1.0.0
+TAG = v$(VERSION)
 TARBALL = srfi-216-$(VERSION).tgz
 AUTHOR = Vinicius Hespanha Souza
 DESCRIPTION = SRFI 216: SICP Prerequisites (Portable)
@@ -14,7 +15,7 @@ DOC = doc/srfi-216.html
 # needs no keys or config, so run it with a throwaway HOME inside the repo.
 BUILD_HOME = $(CURDIR)/.build-home
 
-.PHONY: all test package publish clean
+.PHONY: all test package index clean
 
 all: test
 
@@ -41,9 +42,36 @@ $(TARBALL): $(SOURCES) $(DOC)
 	  --test-library "(srfi 216 test)" \
 	  $(LIB)
 
-# Upload to snow-fort with the maintainer's key.  Maintainer only.
-publish: $(TARBALL)
-	$(SNOW) upload $(TARBALL)
+# Add this release to .snow-repo.scm, the index users point --repo at.
+# Run it on the commit tagged $(TAG), then commit the index on main.
+#
+# snow-chibi rebuilds a git-installed package from the .sld files alone,
+# so run-tests.scm never reaches the installer and a (test ...) entry would
+# make every install fail its tests.  The index is therefore built from a
+# test-less tarball; the release tarball above keeps the suite.
+#
+# git-index reads remote.origin.url and mangles scp-style git@host:user/repo
+# URLs (the user becomes a port), so hand it the https URL through git's
+# environment config, which outranks the repo's own.
+INDEX_DIR = $(BUILD_HOME)/index
+REPO_URL = https://github.com/vhespanha/srfi-216.git
+
+index:
+	@test "$$(git describe --exact-match --tags HEAD 2>/dev/null)" = "$(TAG)" || \
+	  { echo "HEAD is not tagged $(TAG)" >&2; exit 1; }
+	$(MAKE) test
+	mkdir -p $(INDEX_DIR)
+	HOME=$(BUILD_HOME) $(SNOW) package \
+	  --version $(VERSION) \
+	  --authors "$(AUTHOR)" \
+	  --license mit \
+	  --description "$(DESCRIPTION)" \
+	  --doc $(DOC) \
+	  --output-dir $(INDEX_DIR) \
+	  $(LIB)
+	HOME=$(BUILD_HOME) GIT_CONFIG_COUNT=1 \
+	  GIT_CONFIG_KEY_0=remote.origin.url GIT_CONFIG_VALUE_0=$(REPO_URL) \
+	  $(SNOW) git-index $(INDEX_DIR)/$(TARBALL)
 
 clean:
 	rm -rf $(TARBALL) *.log test-out.txt test-err.txt $(BUILD_HOME)
