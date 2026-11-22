@@ -8,15 +8,17 @@ unchanged.
 
 ## Install
 
-With `snow-chibi` 0.12 or later and `git` on your path:
+With `snow-chibi` 0.12 or later, and `git` and `curl` on your path:
 
 ```sh
-snow-chibi --repo=https://raw.githubusercontent.com/vhespanha/srfi-216/main/.snow-repo.scm \
+snow-chibi --use-curl \
+  --repo=https://raw.githubusercontent.com/vhespanha/srfi-216/main/.snow-repo.scm \
   install '(srfi 216)'
 ```
 
 `--repo` points `snow-chibi` at this repository's package index, and the
-package is cloned from the tagged release it names. Install-time tests are
+package is cloned from the tagged release it names. `--use-curl` is needed
+because `snow-chibi`'s built-in HTTP client cannot fetch `https://` URLs. Install-time tests are
 not run this way; clone the repo and run `make test` for those.
 
 Without `git`, download `srfi-216-1.0.0.tgz` from the
